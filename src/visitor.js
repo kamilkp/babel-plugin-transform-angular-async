@@ -75,19 +75,31 @@ export default {
       t.variableDeclarator(t.identifier(ident))
     ]);
 
+    const digestExpression = () =>
+      t.logicalExpression('&&',
+        t.unaryExpression('!',
+          t.memberExpression(
+            t.identifier('$rootScope'),
+            t.identifier('$$phase')
+          )
+        ),
+        t.callExpression(
+          t.memberExpression(
+            t.identifier('$rootScope'),
+            t.identifier('$digest')
+          ),
+          []
+        ),
+      );
+
     const sequence = t.sequenceExpression([
+      digestExpression(),
       t.assignmentExpression(
         '=',
         t.identifier(ident),
         path.node,
       ),
-      t.callExpression(
-        t.memberExpression(
-          t.identifier('$rootScope'),
-          t.identifier('$digest')
-        ),
-        []
-      ),
+      digestExpression(),
       t.identifier(ident),
     ]);
 

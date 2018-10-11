@@ -9,8 +9,8 @@ import visitor from './src/visitor';
 // }`;
 
 const input = `function test() {
-  y = async function foo(a, b) {
-    return a + b;
+  const foo = async() =>{
+    return await x();
   };
 }`;
 // y = async(...args) => {
