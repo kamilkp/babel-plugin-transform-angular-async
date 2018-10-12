@@ -9,9 +9,46 @@ import visitor from './src/visitor';
 // }`;
 
 const input = `function test() {
-  const foo = async() =>{
-    return await x();
-  };
+  $stateProvider.state('account', {
+    url: '/account',
+    data: {
+      title: 'Account',
+      access: accessLevels.manager,
+    },
+    resolve: {
+      personaCollection(PersonaCollection) {
+        'ngInject';
+
+        return PersonaCollection.loadData();
+      },
+      async billingInfo(Authentication, AccountService) {
+        'ngInject';
+
+        await Authentication.userLoaded;
+
+        if (!Authentication.user ||
+            !Authentication.user.orgSettings.subscriptionOptionsEnabled ||
+            !Authentication.user.isAllowedToManageSubscription) {
+          return null;
+        }
+
+        return await AccountService.getBillingInfo();
+      },
+      async customIndustryName(Authentication) {
+        'ngInject';
+
+        if (Authentication.user.org.businessCategory === OTHER_BUSINESS_CATEGORY) {
+          const { data } = await Authentication.sendRequest({
+            path: 'organisations/customindustry',
+          });
+
+          return data.name;
+        }
+
+        return '';
+      },
+    },
+  });
 }`;
 // y = async(...args) => {
 //   const r = await (async function foo(a, b) {
