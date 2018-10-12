@@ -10,7 +10,18 @@ function functionExpression(path) {
   }
 
   if (path.node.async) {
-    const member = t.memberExpression(path.node, t.identifier('call'));
+    let exp = path.node;
+    if (t.isFunctionDeclaration(path.node)) {
+      exp = t.functionExpression(
+        path.node.id,
+        path.node.params,
+        path.node.body,
+        path.node.generator,
+        path.node.async
+      );
+    }
+
+    const member = t.memberExpression(exp, t.identifier('call'));
     const call = t.callExpression(
       member,
       [
@@ -42,8 +53,10 @@ function functionExpression(path) {
     let expr;
     if (t.isArrowFunctionExpression(path.node)) {
       expr = t.arrowFunctionExpression(arg, block);
-    } else {
+    } else if (t.isFunctionExpression(path.node)) {
       expr = t.functionExpression(path.node.id, arg, block);
+    } else {
+      expr = t.functionDeclaration(path.node.id, arg, block);
     }
 
     member.__awrFunctionWrapped = true;
@@ -56,7 +69,23 @@ function functionExpression(path) {
 export default {
   FunctionExpression: functionExpression,
   ArrowFunctionExpression: functionExpression,
-  // FunctionDeclaration: functionExpression,
+  ObjectMethod(path) {
+    if (path.node.async) {
+      path.replaceWith(
+        t.objectProperty(
+          path.node.key,
+          t.functionExpression(
+            path.node.key,
+            path.node.params,
+            path.node.body,
+            path.node.generator,
+            path.node.async
+          )
+        )
+      )
+    }
+  },
+  FunctionDeclaration: functionExpression,
   AwaitExpression(path) {
     if (
       path.container &&
