@@ -1,6 +1,6 @@
 {
   "name": "babel-plugin-transform-angular-async",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Write async/await in angular 1.x apps without worrying about digest loop",
   "main": "lib/index.js",
   "scripts": {

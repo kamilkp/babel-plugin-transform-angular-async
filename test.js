@@ -8,16 +8,28 @@ import visitor from './src/visitor';
 //   __autoinject($rootScope, $httpBackend);
 // }`;
 
-const input = `function test() {
-  return {
-    isPermanent: true,
-    async isIrrelevant(Authentication) {
+const input = `
+  async function a(b, c) {
+    'ngInject';
+
+    return await b + c;
+  }
+
+  const b = {
+    async c(d, e) {
       'ngInject';
 
-      return Authentication.a;
+      return await d + e;
     }
   }
-}`;
+
+  const c = async(e, f) => e + await f();
+
+  const e = async function f(g, h) {
+    'ngInject';
+    return g + await h();
+  }
+`;
 
 const output = `function test() {
   inject((_$rootScope_, _$httpBackend_) => {
