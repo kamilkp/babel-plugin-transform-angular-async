@@ -9,61 +9,76 @@ function functionExpression(path) {
     return;
   }
 
-  if (path.node.async) {
-    let exp = path.node;
-    if (t.isFunctionDeclaration(path.node)) {
-      exp = t.functionExpression(
-        path.node.id,
-        path.node.params,
-        path.node.body,
-        path.node.generator,
-        path.node.async
-      );
-    }
-
-    const member = t.memberExpression(exp, t.identifier('call'));
-    const call = t.callExpression(
-      member,
-      [
-        t.thisExpression(),
-        t.spreadElement(t.identifier('args'))
-      ]
-    );
-
-    const arg = [t.restElement(t.identifier('args'))];
-    const block = t.blockStatement([
-      t.variableDeclaration(
-        'const', [
-          t.variableDeclarator(
-            t.identifier('r'),
-            t.callExpression(
-              t.memberExpression(
-                t.identifier('$q'),
-                t.identifier('when')
-              ), [
-                call
-              ]
-            )
-          )
-        ]
-      ),
-      t.returnStatement(t.identifier('r'))
-    ]);
-
-    let expr;
-    if (t.isArrowFunctionExpression(path.node)) {
-      expr = t.arrowFunctionExpression(arg, block);
-    } else if (t.isFunctionExpression(path.node)) {
-      expr = t.functionExpression(path.node.id, arg, block);
-    } else {
-      expr = t.functionDeclaration(path.node.id, arg, block);
-    }
-
-    member.__awrFunctionWrapped = true;
-    expr.__awrExpressionWrapped = true;
-
-    path.replaceWith(expr)
+  if (!path.node.async) {
+    return;
   }
+
+  let originalFunction = path.node;
+  if (t.isFunctionDeclaration(path.node)) {
+    originalFunction = t.functionExpression(
+      path.node.id,
+      path.node.params,
+      path.node.body,
+      path.node.generator,
+      path.node.async
+    );
+  }
+
+  let callParams = path.node.params;
+  let fnParams = path.node.params;
+  if (!callParams.every(p => t.isIdentifier(p))) {
+    callParams = [t.spreadElement(t.identifier('args'))];
+    fnParams = [t.restElement(t.identifier('args'))];
+  }
+
+  let directives = [];
+
+  if (t.isBlockStatement(originalFunction.body)) {
+    directives = originalFunction.body.directives.slice();
+    originalFunction.body.directives = [];
+  }
+
+  const member = t.memberExpression(originalFunction, t.identifier('call'));
+  const call = t.callExpression(
+    member,
+    [
+      t.thisExpression(),
+      ...callParams
+    ]
+  );
+
+  const block = t.blockStatement([
+    t.variableDeclaration(
+      'const', [
+        t.variableDeclarator(
+          t.identifier('r'),
+          t.callExpression(
+            t.memberExpression(
+              t.identifier('$q'),
+              t.identifier('when')
+            ), [
+              call
+            ]
+          )
+        )
+      ]
+    ),
+    t.returnStatement(t.identifier('r'))
+  ], directives);
+
+  let expr;
+  if (t.isArrowFunctionExpression(path.node)) {
+    expr = t.arrowFunctionExpression(fnParams, block);
+  } else if (t.isFunctionExpression(path.node)) {
+    expr = t.functionExpression(path.node.id, fnParams, block);
+  } else {
+    expr = t.functionDeclaration(path.node.id, fnParams, block);
+  }
+
+  member.__awrFunctionWrapped = true;
+  expr.__awrExpressionWrapped = true;
+
+  path.replaceWith(expr)
 }
 
 export default {

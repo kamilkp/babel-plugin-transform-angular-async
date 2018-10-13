@@ -9,8 +9,13 @@ import visitor from './src/visitor';
 // }`;
 
 const input = `function test() {
-  async function foo() {
-    lala();
+  return {
+    isPermanent: true,
+    async isIrrelevant(Authentication) {
+      'ngInject';
+
+      return Authentication.a;
+    }
   }
 }`;
 
